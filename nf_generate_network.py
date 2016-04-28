@@ -9,7 +9,13 @@ negative demand.  A trivial node will be the parent of all DataCenters, with a p
 Users' demands.
 '''
 
-from random import randint, sample
+from random import randint, sample  #randit(a,b) returns random integer in [a,b]; sample(a,b,k) chooses k unique integers in [a,b] 
+from time import time               #Gives the number of seconds since epoch
+import csv
+
+INFINITY = 999999999                #Effectively infinite, but prints to csv better
+TIMESTAMP = '123456'
+
 
 #define statics
 MIN_DC = 5
@@ -31,7 +37,7 @@ MAX_HUB_ISP_COST = 20
 MIN_ISP_USER_COST = 1
 MAX_ISP_USER_COST = 100
 
-DC_HUB_CAP = 999999999          #Effectively infinity, but prints into a csv better
+DC_HUB_CAP = INFINITY
 MIN_HUB_ISP_CAP = 1000
 MAX_HUB_ISP_CAP = 5000
 MIN_USER_DEMAND = 1
@@ -51,7 +57,7 @@ MAX_ISP_PER_USER = 10
 
 def generate_nodes():
     dc_nodes, hub_nodes, isp_nodes, user_nodes = [], [], [], []
-    source_node = [0,0]             #initialize demand to 0, set to balance total user demand once generated
+    source_node = [[0,0]]             #initialize demand to 0, set to balance total user demand once generated
     num_dcs = randint(MIN_DC, MAX_DC)
     num_hub = randint(MIN_HUB, MAX_HUB)
     num_isp = randint(MIN_ISP, MAX_ISP)
@@ -75,7 +81,7 @@ def generate_nodes():
         total_demand += user_demand
         node_counter += 1
 
-    source_node[1] = total_demand
+    source_node[0][1] = total_demand
 
     all_nodes = source_node + dc_nodes + hub_nodes + isp_nodes + user_nodes
 
@@ -83,14 +89,12 @@ def generate_nodes():
     return source_node, dc_nodes, hub_nodes, isp_nodes, user_nodes
 
 def generate_edges(node_lists):
-    #Infinite capacity is represented by 999999999.
-
     edge_list = []
     edge_id = 0
 
     #Always infinite capacity edge from source to every DC
     for dc_node in node_lists[1]:
-        edge_list.append([edge_id, 0, dc_node[0], 999999999, 0])
+        edge_list.append([edge_id, 0, dc_node[0], INFINITY, 0])
         edge_id += 1
 
     #For each hub, choose a number of DC's and make infinite capacity edges between these
@@ -98,7 +102,7 @@ def generate_edges(node_lists):
         num_dcs = randint(MIN_DC_PER_HUB, MAX_DC_PER_HUB)
         dcs = sample(range(node_lists[1][0][0], node_lists[1][-1][0] + 1), num_dcs)
         for dc in dcs:
-            edge_list.append([edge_id, dc, hub_node[0], 999999999, randint(MIN_DC_HUB_COST, MAX_DC_HUB_COST)])
+            edge_list.append([edge_id, dc, hub_node[0], INFINITY, randint(MIN_DC_HUB_COST, MAX_DC_HUB_COST)])
             edge_id += 1
 
     #Similarly, choose a number of Hubs for each ISP node to be connected to
@@ -106,7 +110,7 @@ def generate_edges(node_lists):
         num_hubs = randint(MIN_HUB_PER_ISP, MAX_HUB_PER_ISP)
         hubs = sample(range(node_lists[2][0][0], node_lists[2][-1][0] + 1), num_hubs)
         for hub in hubs:
-            edge_list.append([edge_id, hub, isp_node[0], 999999999, randint(MIN_HUB_ISP_COST, MAX_HUB_ISP_COST)])
+            edge_list.append([edge_id, hub, isp_node[0], INFINITY, randint(MIN_HUB_ISP_COST, MAX_HUB_ISP_COST)])
             edge_id += 1
 
     #Similarly, choose a number of ISP Nodes for each user to be connected to
@@ -114,8 +118,26 @@ def generate_edges(node_lists):
         num_isps = randint(MIN_ISP_PER_USER, MAX_ISP_PER_USER)
         isps = sample(range(node_lists[3][0][0], node_lists[3][-1][0] + 1), num_isps)
         for isp in isps:
-            edge_list.append([edge_id, isp, user_node[0], 999999999, randint(MIN_ISP_USER_COST, MAX_ISP_USER_COST)])
+            edge_list.append([edge_id, isp, user_node[0], INFINITY, randint(MIN_ISP_USER_COST, MAX_ISP_USER_COST)])
             edge_id += 1
+    return edge_list
 
 
-    #TODO: Write edge data out to file
+def write_files(nodes_list, edge_list):
+    with open('nodes_%s.csv' %TIMESTAMP, 'wb') as nodefile:
+        nodewriter = csv.writer(nodefile, delimiter=',')
+        for nodes in nodes_list:
+            for node in nodes:
+                nodewriter.writerow(node)
+    with open('edges_%s.csv' %TIMESTAMP, 'wb') as edgefile:
+        edgewriter = csv.writer(edgefile, delimiter=',')
+        for edge in edge_list:
+            edgewriter.writerow(edge)
+
+
+if __name__ == '__main__':
+    run_nodes = generate_nodes()
+    print len(run_nodes[0]+run_nodes[1]+run_nodes[2]+run_nodes[3]+run_nodes[4])
+    run_edges = generate_edges(run_nodes)
+    print len(run_edges)
+    write_files(run_nodes, run_edges)
