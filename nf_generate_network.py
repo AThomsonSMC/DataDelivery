@@ -19,12 +19,12 @@ INFINITY = 999999999                #Effectively infinite, but prints to csv bet
 #define statics
 MIN_DC = 5
 MAX_DC = 10
-MIN_HUB = 25
-MAX_HUB = 100
-MIN_ISP = 100
-MAX_ISP = 500
-MIN_USER = 1000
-MAX_USER = 5000
+MIN_HUB = 50
+MAX_HUB = 250
+MIN_ISP = 500
+MAX_ISP = 2500
+MIN_USER = 5000
+MAX_USER = 25000
 
 #Assume data centers have a direct connection to the ISP Hubs - it's very fast and cheap to get unlimited data there.
 #Capactiy comes from the ISP's ability to distribute that data.  Hubs are fairly well connected to their nodes,
@@ -59,8 +59,9 @@ def generate_network(timestamp):
     new_nodes = generate_nodes()
     new_edges = generate_edges(new_nodes)
     print 'Number of edges: %s' %len(new_edges)
+    #TODO: Check network feasibility, rerun until it is feasible
     write_files(new_nodes, new_edges, timestamp)
-    print 'Done generating network.  Saved as "nodes_%s" and "edges_%s" in the current directory.' %(timestamp, timestamp)
+    print 'Done generating network.  Saved as "nodes_%s" and "edges_%s".' %(timestamp, timestamp)
     return new_nodes[5], new_edges
     
 

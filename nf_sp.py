@@ -35,44 +35,8 @@ def write_sp(output, timestamp):
         spwriter = csv.writer(spfile, delimiter=',')
         for node in output:
             spwriter.writerow([node, output[node]])
-
-def djikstras_algorithm(nodes, edges, timestamp):
-    visited_nodes = []
-
-    output = {}
-    for node in nodes:
-        #print node
-        output[node[0]] = [999999999999, 999999999999]
-
-    #start at node 0
-    cur_node = 0
-    output[0] = [0,0]
-
-    while len(visited_nodes) < len(nodes):
-        if len(visited_nodes) % 100 == 0:
-            print 'Labeled %s nodes' %len(visited_nodes)
-        hit_nodes = []
-        hit_edges = []
-        for edge in edges:
-            if edge[1] == cur_node and edge[2] not in visited_nodes:
-                hit_nodes.append(edge[2])
-                hit_edges.append(edge[0])
-        for i in range(len(hit_nodes)):
-            #if current cost is greater than current distance + edge cost, update cost and parent node
-            if output[hit_nodes[i]][1] > output[cur_node][1] + edges[hit_edges[i]][4]:
-                output[hit_nodes[i]] = [cur_node, output[cur_node][1] + edges[hit_edges[i]][4]]
-        visited_nodes.append(cur_node)
-        
-        cur_label = 9999
-        #find the node with the lowest label and continue algorithm
-        for node in output:
-            if node not in visited_nodes and output[node][1] < cur_label:
-                cur_node = node
-                cur_label = output[node][1]
-
-    print "Shortest paths have been found"
-    write_sp(output, timestamp)
-    
+    print 'Writted to sp_%.csv' %timestamp
+            
     
 def topological_sort(nodes, edges, timestamp):
     pass
@@ -108,6 +72,8 @@ def topological_sort(nodes, edges, timestamp):
     if len(queued_nodes) > 0:
         print 'Something went wrong, there are still queued nodes!!'
         
+    
+    print 'Done finding shortest paths, writing to disk.'
     write_sp(output, timestamp)
         
         
