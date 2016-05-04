@@ -9,22 +9,23 @@ viewer demands.
 '''
 
 
-#import generate_network from nf_generate_network
-#import shortest_paths from nf_sp
+from nf_generate_network import generate_network
+from nf_sp import djikstras_algorithm
 #import max_flow from nf_max_flow
 #import min_cut from nf_min_cut
 #import flood_network from nf_flood_network
 #import calc_stats from nf_calc_status
 
+from time import time                           #Gives number of seconds since epoch
 
 if __name__ == '__main__':
+    TIMESTAMP = int(time())
     print '\nStarting NetflixDelivery.py...'
     print 'For usage explanation, see the README'
-    print '\n\nGenerating network...'
-    #generate_network()
-    print '\n\nFinding shortest paths...'
-    #shortest_paths()
-    print '\n\nCalculating Max Flow and Min Cut...'
+    nodes, edges = generate_network(TIMESTAMP)
+    print '\nFinding shortest paths...'
+    djikstras_algorithm(nodes, edges, TIMESTAMP)
+    print '\nCalculating Max Flow and Min Cut...'
     #max_flow()
     #min_cut()
     print '\n\nFlooding Network...'

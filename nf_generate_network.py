@@ -14,18 +14,17 @@ from time import time               #Gives the number of seconds since epoch
 import csv
 
 INFINITY = 999999999                #Effectively infinite, but prints to csv better
-TIMESTAMP = '123456'
 
 
 #define statics
 MIN_DC = 5
 MAX_DC = 10
-MIN_HUB = 10
-MAX_HUB = 50
+MIN_HUB = 25
+MAX_HUB = 100
 MIN_ISP = 100
-MAX_ISP = 1000
-MIN_USER = 10000
-MAX_USER = 50000
+MAX_ISP = 500
+MIN_USER = 1000
+MAX_USER = 5000
 
 #Assume data centers have a direct connection to the ISP Hubs - it's very fast and cheap to get unlimited data there.
 #Capactiy comes from the ISP's ability to distribute that data.  Hubs are fairly well connected to their nodes,
@@ -38,8 +37,8 @@ MIN_ISP_USER_COST = 1
 MAX_ISP_USER_COST = 100
 
 DC_HUB_CAP = INFINITY
-MIN_HUB_ISP_CAP = 1000
-MAX_HUB_ISP_CAP = 5000
+MIN_HUB_ISP_CAP = 5000
+MAX_HUB_ISP_CAP = 20000
 MIN_USER_DEMAND = 1
 MAX_USER_DEMAND = 10
 ISP_USER_CAP = MAX_USER_DEMAND      #flow to individual users is decided by their demand, not capacity
@@ -55,13 +54,29 @@ MAX_ISP_PER_USER = 10
 
 #TODO: Move all these into statics.txt and read them in
 
+def generate_network(timestamp):
+    print '\nGenerating new network with id %s...\n' %timestamp
+    new_nodes = generate_nodes()
+    new_edges = generate_edges(new_nodes)
+    print 'Number of edges: %s' %len(new_edges)
+    write_files(new_nodes, new_edges, timestamp)
+    print 'Done generating network.  Saved as "nodes_%s" and "edges_%s" in the current directory.' %(timestamp, timestamp)
+    return new_nodes[5], new_edges
+    
+
 def generate_nodes():
     dc_nodes, hub_nodes, isp_nodes, user_nodes = [], [], [], []
-    source_node = [[0,0]]             #initialize demand to 0, set to balance total user demand once generated
+    source_node = [0,0]             #initialize demand to 0, set to balance total user demand once generated
     num_dcs = randint(MIN_DC, MAX_DC)
     num_hub = randint(MIN_HUB, MAX_HUB)
     num_isp = randint(MIN_ISP, MAX_ISP)
     num_user = randint(MIN_USER, MAX_USER)
+    
+    print 'Number of nodes:\n'
+    print 'DCs: %s' %num_dcs
+    print 'HUBs: %s' %num_hub
+    print 'ISPs: %s' %num_isp
+    print 'USERs: %s' %num_user
 
     node_counter = 1
     for i in range(num_dcs):
@@ -81,14 +96,25 @@ def generate_nodes():
         total_demand += user_demand
         node_counter += 1
 
-    source_node[0][1] = total_demand
+    source_node[1] = total_demand
 
-    all_nodes = source_node + dc_nodes + hub_nodes + isp_nodes + user_nodes
+    all_nodes = []
+    all_nodes.append(source_node)
+    for node in dc_nodes:
+        all_nodes.append(node)
+    for node in hub_nodes:
+        all_nodes.append(node)
+    for node in isp_nodes:
+        all_nodes.append(node)
+    for node in user_nodes:
+        all_nodes.append(node)
 
     #TODO: write all_nodes out to nodes_[id].csv
-    return source_node, dc_nodes, hub_nodes, isp_nodes, user_nodes
+    return source_node, dc_nodes, hub_nodes, isp_nodes, user_nodes, all_nodes
 
 def generate_edges(node_lists):
+    
+    #Edges are of the form: [edge_id, tail_id, head_id, capacity, cost]
     edge_list = []
     edge_id = 0
 
@@ -123,21 +149,25 @@ def generate_edges(node_lists):
     return edge_list
 
 
-def write_files(nodes_list, edge_list):
-    with open('nodes_%s.csv' %TIMESTAMP, 'wb') as nodefile:
+def write_files(nodes_list, edge_list, timestamp):
+    with open('nodes_%s.csv' %timestamp, 'wb') as nodefile:
         nodewriter = csv.writer(nodefile, delimiter=',')
         for nodes in nodes_list:
-            for node in nodes:
-                nodewriter.writerow(node)
-    with open('edges_%s.csv' %TIMESTAMP, 'wb') as edgefile:
+            nodewriter.writerow(nodes)
+    with open('edges_%s.csv' %timestamp, 'wb') as edgefile:
         edgewriter = csv.writer(edgefile, delimiter=',')
         for edge in edge_list:
             edgewriter.writerow(edge)
 
 
 if __name__ == '__main__':
-    run_nodes = generate_nodes()
-    print len(run_nodes[0]+run_nodes[1]+run_nodes[2]+run_nodes[3]+run_nodes[4])
+    TIMESTAMP = int(time())
+    run_nodes = generate_nodes(TIMESTAMP)
+    print 'Number of nodes:\n'
+    print 'DCs: %s' %len(run_nodes[1])
+    print 'HUBs: %s' %len(run_nodes[2])
+    print 'ISPs: %s' %len(run_nodes[3])
+    print 'USERs: %s' %len(run_nodes[4])
     run_edges = generate_edges(run_nodes)
-    print len(run_edges)
-    write_files(run_nodes, run_edges)
+    print 'Number of edges: %s' %len(run_edges)
+    write_files(run_nodes, run_edges, TIMESTAMP)
