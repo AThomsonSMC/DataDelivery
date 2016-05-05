@@ -27,7 +27,7 @@ MAX_ISP = 2500
 MIN_USER = 5000
 MAX_USER = 10000
 
-#Assume data centers have a direct connection to the ISP Hubs - it's very fast and cheap to get unlimited data there.
+#Assume data centers have a direct connection to the ISP Hubs - it's very fast and cheap to get a lot of data there.
 #Capactiy comes from the ISP's ability to distribute that data.  Hubs are fairly well connected to their nodes,
 #but the cost to get data to individual users can vary wildly.
 MIN_DC_HUB_COST = 1
@@ -37,9 +37,10 @@ MAX_HUB_ISP_COST = 20
 MIN_ISP_USER_COST = 1
 MAX_ISP_USER_COST = 100
 
-DC_HUB_CAP = INFINITY
+MIN_DC_HUB_CAP = 10000
+MAX_DC_HUB_CAP = 50000
 MIN_HUB_ISP_CAP = 5000
-MAX_HUB_ISP_CAP = 20000
+MAX_HUB_ISP_CAP = 10000
 MIN_ISP_USER_CAP = 2
 MAX_ISP_USER_CAP = 10
 MIN_USER_DEMAND = 1
@@ -141,7 +142,7 @@ def generate_edges(node_lists):
             num_dcs = randint(MIN_DC_PER_HUB, MAX_DC_PER_HUB)
             dcs = sample(range(node_lists[1][0][0], node_lists[1][-1][0] + 1), num_dcs)
             for dc in dcs:
-                edge_list.append([edge_id, dc, hub_node[0], INFINITY, randint(MIN_DC_HUB_COST, MAX_DC_HUB_COST)])
+                edge_list.append([edge_id, dc, hub_node[0], randint(MIN_DC_HUB_CAP, MAX_DC_HUB_CAP), randint(MIN_DC_HUB_COST, MAX_DC_HUB_COST)])
                 edge_id += 1
         edge_boundaries.append(edge_id)
 

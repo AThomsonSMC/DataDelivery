@@ -42,29 +42,37 @@ def write_output(output, timestamp):
     
 
 def check_demand(node, node_bounds, edges, edge_bounds, tot_edges):
-    #Takes in the graph and a node [id, +supply/-demand], and checks if current flow satisfies that node's demand.  returns True for satisfied, False for not.
+    #Takes in the graph and a node [id, +supply/-demand], and checks if current flow satisfies that node's demand.
+    # Returns demand - cur_flow; negative means demand not being met, positive means node is over-supplied 
     demand = node[1]
     cur_flow = 0
     if demand == 0:
-        return True
+        return 0
     if demand < 0:
         search_bounds = nf_utils.find_inbound_edges(node[0], node_bounds, edge_bounds, tot_edges)
         for edge in edges[search_bounds[0]:search_bounds[1]]:
             if edge[2] == node[0]:
                 cur_flow += edges[5]
-        if demand + cur_flow == 0: return True
-        else: return False
+        return demand + cur_flow == 0
     elif demand > 0:
         search_bounds = nf_utils.find_outbound_edges(node[0], node_bounds, edge_bounds, tot_edges)
         for edge in edges[search_bounds[0]:search_bounds[1]]:
             if edge[1] == node[0]:
                 cur_flow -= edges[5]
-        if demand + cur_flow == 0: return True
-        else: return False
+        return demand + cur_flow == 0
     else:
         # ????? Something went very wrong
         raise Exception
         
         
 def max_flow(nodes, edges, node_bounds, edge_bounds, timestamp):
-    pass
+    #  Use a preflow-push algorithm to find the min-cost flow.  Initialize the flow graph by pushing flow = capacity on ISP->User nodes
+    #  Then calculate the total flow out of ISP nodes, and push flows from HUBs to satisfy (using lowest cost edges), and repeat from DCs to HUBs.
+    #  Once this preflow is found, loop over user nodes to find excess flow (will never have shortage, generate_network checks for
+    #  feasibility before writing output).  Remove flow from highest cost edges until flow = demand.  Once user demands are satisfied,
+    #  repeat this process on ISPs and HUBs.  This will produce the min-cost flow that satisfies user demands.
+    flow = {}
+    for edge in edges:
+        flow[edge[0]] = 0
+    user_edge_search_bounds = nf_utils.find_inbound_edges(nodes[-1][0])    #The last node will always be a user node.
+    for node in nodes[node_bounds[2]:]:
