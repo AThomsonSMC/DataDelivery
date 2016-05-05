@@ -43,14 +43,13 @@ MIN_USER_DEMAND = 1
 MAX_USER_DEMAND = 10
 ISP_USER_CAP = MAX_USER_DEMAND      #flow to individual users is decided by their demand, not capacity
                                     #in reality, demand is often limited by capacity, but behavior is same for the model
-                                    #storing data this way allows for faster lookups since n < m
 
 MIN_DC_PER_HUB = 1
 MAX_DC_PER_HUB = 3
 MIN_HUB_PER_ISP = 2
 MAX_HUB_PER_ISP = 10
 MIN_ISP_PER_USER = 1
-MAX_ISP_PER_USER = 10
+MAX_ISP_PER_USER = 5
 
 #TODO: Move all these into statics.txt and read them in
 
@@ -176,6 +175,7 @@ def write_files(nodes_list, edge_list, timestamp):
 if __name__ == '__main__':
     TIMESTAMP = int(time())
     run_nodes = generate_nodes(TIMESTAMP)
+    print 'ID: %s' %TIMESTAMP
     print 'Number of nodes:\n'
     print 'DCs: %s' %len(run_nodes[1])
     print 'HUBs: %s' %len(run_nodes[2])
