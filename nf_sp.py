@@ -31,15 +31,15 @@ test_edges = [               #[edge_id, tail_id, head_id, capacity, cost]
 ]
 
 def write_sp(output, timestamp):
-    with open('sp_%s.csv' %timestamp, 'wb') as spfile:
+    with open('./io/sp_%s.csv' %timestamp, 'wb') as spfile:
         spwriter = csv.writer(spfile, delimiter=',')
         for node in output:
             spwriter.writerow([node, output[node]])
-    print 'Writted to sp_%.csv' %timestamp
+    print timestamp
+    print 'Written to sp_%s.csv' %timestamp
             
     
-def topological_sort(nodes, edges, timestamp):
-    pass
+def topological_sort(nodes, edges, node_boundaries, edge_boundaries, timestamp):
     node_distances = {}
     queued_nodes = []
     done_nodes = []
@@ -53,8 +53,33 @@ def topological_sort(nodes, edges, timestamp):
     node_distances[cur_node] = 0    #source node is 0 distance from itself
     output[cur_node] = cur_node     #source node's parent is itself
     
+    print node_boundaries
+    print edge_boundaries
+    #Do this loop until the number of permanently labels nodes = number of nodes
     while len(done_nodes) < len(nodes):
-        for edge in edges:
+        edge_section = 0
+        for boundary in node_boundaries:
+            #print boundary, cur_node
+            if boundary < cur_node: 
+                #print 'new boundary'
+                edge_section += 1
+                
+        #Edge sections:
+            #0 = source -> DC
+            #1 = DC -> HUB
+            #2 = HUB -> ISP
+            #3 = ISP -> User
+                
+        #Define the bounds of edge_ids to search for outbound edges, depends on "edge_section" currently in
+        if edge_section <= 1:
+            edge_bounds = [0,edge_boundaries[1]]
+        elif edge_section == 2:
+            edge_bounds = [edge_boundaries[1], edge_boundaries[2]]
+        elif edge_section == 3:
+            edge_bounds = [edge_boundaries[2], len(edges)]
+        
+       
+        for edge in edges[edge_bounds[0]:edge_bounds[1]]:               #Use edge_bounds to limit the indices of edges to search on
             if edge[1] == cur_node:
                 if edge[2] not in queued_nodes and edge[2] not in done_nodes:
                     queued_nodes.append(edge[2])
@@ -78,4 +103,4 @@ def topological_sort(nodes, edges, timestamp):
         
         
 if __name__ == "__main__":
-    topological_sort(test_nodes, test_edges, 'TEST123')
+    topological_sort(test_nodes, test_edges, [999,999,999], [999,999,999], 'TEST123')

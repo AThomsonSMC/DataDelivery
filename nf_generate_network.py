@@ -19,12 +19,12 @@ INFINITY = 999999999                #Effectively infinite, but prints to csv bet
 #define statics
 MIN_DC = 5
 MAX_DC = 10
-MIN_HUB = 50
-MAX_HUB = 250
-MIN_ISP = 500
-MAX_ISP = 2500
-MIN_USER = 5000
-MAX_USER = 25000
+MIN_HUB = 5
+MAX_HUB = 25
+MIN_ISP = 50
+MAX_ISP = 250
+MIN_USER = 500
+MAX_USER = 2500
 
 #Assume data centers have a direct connection to the ISP Hubs - it's very fast and cheap to get unlimited data there.
 #Capactiy comes from the ISP's ability to distribute that data.  Hubs are fairly well connected to their nodes,
@@ -57,12 +57,13 @@ MAX_ISP_PER_USER = 10
 def generate_network(timestamp):
     print '\nGenerating new network with id %s...\n' %timestamp
     new_nodes = generate_nodes()
-    new_edges = generate_edges(new_nodes)
+    node_boundaries = new_nodes[6]
+    new_edges, edge_boundaries = generate_edges(new_nodes)
     print 'Number of edges: %s' %len(new_edges)
     #TODO: Check network feasibility, rerun until it is feasible
     write_files(new_nodes, new_edges, timestamp)
     print 'Done generating network.  Saved as "nodes_%s" and "edges_%s".' %(timestamp, timestamp)
-    return new_nodes[5], new_edges
+    return new_nodes[5], new_edges, node_boundaries, edge_boundaries
     
 
 def generate_nodes():
@@ -72,6 +73,8 @@ def generate_nodes():
     num_hub = randint(MIN_HUB, MAX_HUB)
     num_isp = randint(MIN_ISP, MAX_ISP)
     num_user = randint(MIN_USER, MAX_USER)
+    node_boundaries = []            #Because graph has multiple sets bipartite from eachother
+                                    # use these bounds to know which "section" the node being examined is in
     
     print 'Number of nodes:\n'
     print 'DCs: %s' %num_dcs
@@ -83,12 +86,15 @@ def generate_nodes():
     for i in range(num_dcs):
         dc_nodes.append([node_counter, 0])
         node_counter += 1
+    node_boundaries.append(node_counter)
     for i in range(num_hub):
         hub_nodes.append([node_counter, 0])
         node_counter += 1
+    node_boundaries.append(node_counter)
     for i in range(num_isp):
         isp_nodes.append([node_counter, 0])
         node_counter += 1
+    node_boundaries.append(node_counter)
 
     total_demand = 0
     for i in range(num_user):
@@ -111,18 +117,21 @@ def generate_nodes():
         all_nodes.append(node)
 
     #TODO: write all_nodes out to nodes_[id].csv
-    return source_node, dc_nodes, hub_nodes, isp_nodes, user_nodes, all_nodes
+    return source_node, dc_nodes, hub_nodes, isp_nodes, user_nodes, all_nodes, node_boundaries
 
 def generate_edges(node_lists):
     
     #Edges are of the form: [edge_id, tail_id, head_id, capacity, cost]
     edge_list = []
     edge_id = 0
+    edge_boundaries = []            #Because graph has multiple bipartite sets, when searching for outbound edges from a node,
+                                    # you know the min and max of possible edge_ids
 
     #Always infinite capacity edge from source to every DC
     for dc_node in node_lists[1]:
         edge_list.append([edge_id, 0, dc_node[0], INFINITY, 0])
         edge_id += 1
+    edge_boundaries.append(edge_id)
 
     #For each hub, choose a number of DC's and make infinite capacity edges between these
     for hub_node in node_lists[2]:
@@ -131,6 +140,7 @@ def generate_edges(node_lists):
         for dc in dcs:
             edge_list.append([edge_id, dc, hub_node[0], INFINITY, randint(MIN_DC_HUB_COST, MAX_DC_HUB_COST)])
             edge_id += 1
+    edge_boundaries.append(edge_id)
 
     #Similarly, choose a number of Hubs for each ISP node to be connected to
     for isp_node in node_lists[3]:
@@ -139,6 +149,7 @@ def generate_edges(node_lists):
         for hub in hubs:
             edge_list.append([edge_id, hub, isp_node[0], INFINITY, randint(MIN_HUB_ISP_COST, MAX_HUB_ISP_COST)])
             edge_id += 1
+    edge_boundaries.append(edge_id)
 
     #Similarly, choose a number of ISP Nodes for each user to be connected to
     for user_node in node_lists[4]:
@@ -147,15 +158,16 @@ def generate_edges(node_lists):
         for isp in isps:
             edge_list.append([edge_id, isp, user_node[0], INFINITY, randint(MIN_ISP_USER_COST, MAX_ISP_USER_COST)])
             edge_id += 1
-    return edge_list
+    
+    return edge_list, edge_boundaries
 
 
 def write_files(nodes_list, edge_list, timestamp):
-    with open('nodes_%s.csv' %timestamp, 'wb') as nodefile:
+    with open('./io/nodes_%s.csv' %timestamp, 'wb') as nodefile:
         nodewriter = csv.writer(nodefile, delimiter=',')
         for nodes in nodes_list:
             nodewriter.writerow(nodes)
-    with open('edges_%s.csv' %timestamp, 'wb') as edgefile:
+    with open('./io/edges_%s.csv' %timestamp, 'wb') as edgefile:
         edgewriter = csv.writer(edgefile, delimiter=',')
         for edge in edge_list:
             edgewriter.writerow(edge)

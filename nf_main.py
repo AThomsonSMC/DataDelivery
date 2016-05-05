@@ -21,9 +21,9 @@ if __name__ == '__main__':
     TIMESTAMP = int(time())
     print '\nStarting Network Flows DataDelivery.py...'
     print 'For usage explanation, see the README'
-    nodes, edges = generate_network(TIMESTAMP)
+    nodes, edges, node_boundaries, edge_boundaries = generate_network(TIMESTAMP)
     print '\nFinding shortest paths...'
-    topological_sort(nodes, edges, TIMESTAMP)
+    topological_sort(nodes, edges, node_boundaries, edge_boundaries, TIMESTAMP)
     print '\nCalculating Max Flow and Min Cut...'
     #max_flow()
     #min_cut()
