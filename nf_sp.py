@@ -39,7 +39,7 @@ def write_sp(output, timestamp):
     print 'Written to sp_%s.csv' %timestamp
             
     
-def topological_sort(nodes, edges, node_boundaries, edge_boundaries, timestamp):
+def topological_sort(nodes, edges, node_bounds, edge_bounds, timestamp):
     node_distances = {}
     queued_nodes = []
     done_nodes = []
@@ -53,33 +53,30 @@ def topological_sort(nodes, edges, node_boundaries, edge_boundaries, timestamp):
     node_distances[cur_node] = 0    #source node is 0 distance from itself
     output[cur_node] = cur_node     #source node's parent is itself
     
-    print node_boundaries
-    print edge_boundaries
     #Do this loop until the number of permanently labels nodes = number of nodes
     while len(done_nodes) < len(nodes):
+        
+        #Determine which set the node is in and then define the bounds to search for outbound edges
         edge_section = 0
-        for boundary in node_boundaries:
-            #print boundary, cur_node
-            if boundary < cur_node: 
-                #print 'new boundary'
+        for bound in node_bounds:
+            if bound <= cur_node:
                 edge_section += 1
                 
         #Edge sections:
             #0 = source -> DC
             #1 = DC -> HUB
             #2 = HUB -> ISP
-            #3 = ISP -> User
-                
+            #3 = ISP -> Users
+             
         #Define the bounds of edge_ids to search for outbound edges, depends on "edge_section" currently in
-        if edge_section <= 1:
-            edge_bounds = [0,edge_boundaries[1]]
-        elif edge_section == 2:
-            edge_bounds = [edge_boundaries[1], edge_boundaries[2]]
-        elif edge_section == 3:
-            edge_bounds = [edge_boundaries[2], len(edges)]
+        if edge_section == 0:
+            search_bounds = [0,edge_bounds[0]]
+        elif edge_section == 3 or edge_section == 4:                        # edge_section = 4 means we're examining the last node
+            search_bounds = [edge_bounds[2], len(edges)]
+        else:
+            search_bounds = [edge_bounds[edge_section-1], edge_bounds[edge_section]]
         
-       
-        for edge in edges[edge_bounds[0]:edge_bounds[1]]:               #Use edge_bounds to limit the indices of edges to search on
+        for edge in edges[search_bounds[0]:search_bounds[1]]:               #Use search_bounds to limit the indices of edges to search on
             if edge[1] == cur_node:
                 if edge[2] not in queued_nodes and edge[2] not in done_nodes:
                     queued_nodes.append(edge[2])

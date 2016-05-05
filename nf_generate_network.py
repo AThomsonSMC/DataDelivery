@@ -18,13 +18,13 @@ INFINITY = 999999999                #Effectively infinite, but prints to csv bet
 
 #define statics
 MIN_DC = 5
-MAX_DC = 10
-MIN_HUB = 5
-MAX_HUB = 25
-MIN_ISP = 50
-MAX_ISP = 250
-MIN_USER = 500
-MAX_USER = 2500
+MAX_DC = 25
+MIN_HUB = 50
+MAX_HUB = 250
+MIN_ISP = 500
+MAX_ISP = 2500
+MIN_USER = 5000
+MAX_USER = 10000
 
 #Assume data centers have a direct connection to the ISP Hubs - it's very fast and cheap to get unlimited data there.
 #Capactiy comes from the ISP's ability to distribute that data.  Hubs are fairly well connected to their nodes,
@@ -73,8 +73,8 @@ def generate_nodes():
     num_hub = randint(MIN_HUB, MAX_HUB)
     num_isp = randint(MIN_ISP, MAX_ISP)
     num_user = randint(MIN_USER, MAX_USER)
-    node_boundaries = []            #Because graph has multiple sets bipartite from eachother
-                                    # use these bounds to know which "section" the node being examined is in
+    node_boundaries = [1]            #Because graph has multiple sets bipartite from eachother
+                                     # use these bounds to know which "section" the node being examined is in.  Source node in it's own set.
     
     print 'Number of nodes:\n'
     print 'DCs: %s' %num_dcs
