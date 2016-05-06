@@ -69,7 +69,7 @@ def generate_network(timestamp):
 
 def generate_nodes():
     dc_nodes, hub_nodes, isp_nodes, user_nodes = [], [], [], []
-    source_node = [0,0]             #initialize demand to 0, set to balance total user demand once generated
+    source_node = [0,0,0]             #initialize demand to 0, set to balance total user demand once generated.  source is always 0 distance from self
     num_dcs = randint(MIN_DC, MAX_DC)
     num_hub = randint(MIN_HUB, MAX_HUB)
     num_isp = randint(MIN_ISP, MAX_ISP)
@@ -85,22 +85,22 @@ def generate_nodes():
 
     node_counter = 1
     for i in range(num_dcs):
-        dc_nodes.append([node_counter, 0])
+        dc_nodes.append([node_counter, 0, 0])
         node_counter += 1
     node_boundaries.append(node_counter)
     for i in range(num_hub):
-        hub_nodes.append([node_counter, 0])
+        hub_nodes.append([node_counter, 0, 0])
         node_counter += 1
     node_boundaries.append(node_counter)
     for i in range(num_isp):
-        isp_nodes.append([node_counter, 0])
+        isp_nodes.append([node_counter, 0, 0])
         node_counter += 1
     node_boundaries.append(node_counter)
 
     total_demand = 0
     for i in range(num_user):
         user_demand = randint(MIN_USER_DEMAND, MAX_USER_DEMAND)
-        user_nodes.append([node_counter, (user_demand * -1)])       #Negative for demand
+        user_nodes.append([node_counter, (user_demand * -1), 0])       #Negative for demand
         total_demand += user_demand
         node_counter += 1
 
@@ -189,11 +189,11 @@ def write_files(nodes_list, edge_list, timestamp):
     with open('./io/nodes_%s.csv' %timestamp, 'wb') as nodefile:
         nodewriter = csv.writer(nodefile, delimiter=',')
         for nodes in nodes_list:
-            nodewriter.writerow(nodes)
+            nodewriter.writerow(nodes[:2])          # Don't write distance to nodes.csv - not calculated yet
     with open('./io/edges_%s.csv' %timestamp, 'wb') as edgefile:
         edgewriter = csv.writer(edgefile, delimiter=',')
         for edge in edge_list:
-            edgewriter.writerow(edge)
+            edgewriter.writerow(edge[:5])           # Don't write flow to edges.csv - not calculated yet
 
 
 if __name__ == '__main__':

@@ -7,14 +7,14 @@ import nf_utils
 
 #This is test data for a small, acyclic graph
 test_nodes = [               #[node_id, demand]
-  [0, 4],
-  [1, 5],
-  [2, 0],
-  [3, 0],
-  [4, 0],
-  [5, 0],
-  [6, -3],
-  [7, -6]
+  [0, 4, 0],
+  [1, 5, 0],
+  [2, 0, 0],
+  [3, 0, 0],
+  [4, 0, 0],
+  [5, 0, 0],
+  [6, -3, 0],
+  [7, -6, 0]
 ]
 
 test_edges = [               #[edge_id, tail_id, head_id, capacity, cost]
@@ -62,6 +62,7 @@ def topological_sort(nodes, edges, node_bounds, edge_bounds, timestamp):
                     queued_nodes.append(edge[2])
                 if node_distances[edge[2]] > (node_distances[cur_node] + edge[4]):
                     node_distances[edge[2]] = node_distances[cur_node] + edge[4]
+                    node[cur_node][2] = node_distances[cur_node] + edge[4]      # Update node's working distance
                     output[edge[2]] = edge[1]
         done_nodes.append(cur_node)
         
