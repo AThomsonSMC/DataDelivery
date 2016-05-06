@@ -125,24 +125,24 @@ def generate_edges(node_lists):
     attempts = 0
     while not valid:
         invalid = False
-        #Edges are of the form: [edge_id, tail_id, head_id, capacity, cost]
+        #Edges are of the form: [edge_id, tail_id, head_id, capacity, cost, flow]
         edge_list = []
         edge_id = 0
         edge_boundaries = []            #Because graph has multiple bipartite sets, when searching for outbound edges from a node,
                                         # you know the min and max of possible edge_ids
 
-        #Always infinite capacity edge from source to every DC
+        #Always infinite capacity, no cost edge from source to every DC
         for dc_node in node_lists[1]:
-            edge_list.append([edge_id, 0, dc_node[0], INFINITY, 0])
+            edge_list.append([edge_id, 0, dc_node[0], INFINITY, 0, 0])
             edge_id += 1
         edge_boundaries.append(edge_id)
 
-        #For each hub, choose a number of DC's and make infinite capacity edges between these
+        #For each hub, choose a number of DC's and make edges between these
         for hub_node in node_lists[2]:
             num_dcs = randint(MIN_DC_PER_HUB, MAX_DC_PER_HUB)
             dcs = sample(range(node_lists[1][0][0], node_lists[1][-1][0] + 1), num_dcs)
             for dc in dcs:
-                edge_list.append([edge_id, dc, hub_node[0], randint(MIN_DC_HUB_CAP, MAX_DC_HUB_CAP), randint(MIN_DC_HUB_COST, MAX_DC_HUB_COST)])
+                edge_list.append([edge_id, dc, hub_node[0], randint(MIN_DC_HUB_CAP, MAX_DC_HUB_CAP), randint(MIN_DC_HUB_COST, MAX_DC_HUB_COST), 0])
                 edge_id += 1
         edge_boundaries.append(edge_id)
 
@@ -151,16 +151,16 @@ def generate_edges(node_lists):
             num_hubs = randint(MIN_HUB_PER_ISP, MAX_HUB_PER_ISP)
             hubs = sample(range(node_lists[2][0][0], node_lists[2][-1][0] + 1), num_hubs)
             for hub in hubs:
-                edge_list.append([edge_id, hub, isp_node[0], randint(MIN_HUB_ISP_CAP, MAX_HUB_ISP_CAP), randint(MIN_HUB_ISP_COST, MAX_HUB_ISP_COST)])
+                edge_list.append([edge_id, hub, isp_node[0], randint(MIN_HUB_ISP_CAP, MAX_HUB_ISP_CAP), randint(MIN_HUB_ISP_COST, MAX_HUB_ISP_COST), 0])
                 edge_id += 1
         edge_boundaries.append(edge_id)
 
-        #Similarly, choose a number of ISP Nodes for each user to be connected to
+        #Finally, choose a number of ISP Nodes for each user to be connected to
         for user_node in node_lists[4]:
             num_isps = randint(MIN_ISP_PER_USER, MAX_ISP_PER_USER)
             isps = sample(range(node_lists[3][0][0], node_lists[3][-1][0] + 1), num_isps)
             for isp in isps:
-                edge_list.append([edge_id, isp, user_node[0], randint(MIN_ISP_USER_CAP, MAX_HUB_ISP_CAP), randint(MIN_ISP_USER_COST, MAX_ISP_USER_COST)])
+                edge_list.append([edge_id, isp, user_node[0], randint(MIN_ISP_USER_CAP, MAX_HUB_ISP_CAP), randint(MIN_ISP_USER_COST, MAX_ISP_USER_COST), 0])
                 edge_id += 1
                 
         #check to make sure user nodes have at least capacity for their demand
