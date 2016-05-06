@@ -54,11 +54,12 @@ def get_node_excess(node, ib_edges, ob_edges):
         
         
 def max_flow(nodes, edges, node_bounds, edge_bounds, timestamp):
-    #  Use a modified preflow-push algorithm to find the min-cost flow.  Initialize the flow graph by pushing flow = capacity on ISP->User nodes
-    #  Then calculate the total flow out of ISP nodes, and push flows from HUBs to satisfy (using lowest cost edges), and repeat from DCs to HUBs.
-    #  Once this preflow is found, iterate over user nodes to find excess flow (will never have shortage, generate_network checks for capacity
-    #  feasibility before writing output).  Remove flow from highest cost edges until flow = demand.  Once user demands are satisfied,
-    #  repeat this process on ISPs and HUBs.  This will produce the min-cost flow that satisfies user demands.
+    #  Use a modified preflow-push algorithm to find the min-cost flow.  Initialize the flow graph by pushing flow = min(demand, capacity)
+    #  on ISP->User nodes.  Then calculate the total flow out of ISP nodes, and push flows from HUBs to satisfy (using lowest cost edges),
+    #  and repeat from DCs to HUBs.  Once this preflow is found, iterate over user nodes to find excess flow (will never have shortage,
+    #  generate_network checks for capacity feasibility before writing output).  Remove flow from highest cost edges until flow = demand.
+    #                                                                             ^By highest cost, I'm using (edge_head_distance + cost)
+    #  Once user demands are satisfied, repeat this process on ISPs and HUBs.  This will produce the min-cost flow that satisfies user demands.
     tot_flow = {}
     for edge in edges:
         flow[edge[0]] = 0
