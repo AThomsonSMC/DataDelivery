@@ -70,7 +70,7 @@ def generate_nodes():
     num_hub = randint(MIN_HUB, MAX_HUB)
     num_isp = randint(MIN_ISP, MAX_ISP)
     num_user = randint(MIN_USER, MAX_USER)
-    node_boundaries = [1]            #Because graph has multiple sets bipartite from eachother
+    node_bounds = [1]            #Because graph has multiple sets bipartite from eachother
                                      # use these bounds to know which "section" the node being examined is in.  Source node in it's own set.
     
     print 'Number of nodes:\n'
@@ -84,34 +84,34 @@ def generate_nodes():
     for i in range(num_dcs):
         nodes.append([node_counter, INFINITY])
         node_counter += 1
-    node_boundaries.append(node_counter)
+    node_bounds.append(node_counter)
     for i in range(num_hub):
         nodes.append([node_counter, INFINITY])
         node_counter += 1
-    node_boundaries.append(node_counter)
+    node_bounds.append(node_counter)
     for i in range(num_isp):
         nodes.append([node_counter, INFINITY])
         node_counter += 1
-    node_boundaries.append(node_counter)
+    node_bounds.append(node_counter)
     for i in range(num_user):
         nodes.append([node_counter, INFINITY])
         node_counter += 1
     
     #TODO: write all_nodes out to nodes_[id].csv
-    return nodes, node_boundaries
+    return nodes, node_bounds
 
 def generate_edges(nodes, node_bounds):
     #Edges are of the form: [edge_id, tail_id, head_id, capacity, cost, flow]
     edge_list = []
     edge_id = 0
-    edge_boundaries = []            #Because graph has multiple bipartite sets, when searching for outbound edges from a node,
+    edge_bounds = []            #Because graph has multiple bipartite sets, when searching for outbound edges from a node,
                                     # you know the min and max of possible edge_ids
 
     #Always infinite capacity, no cost edge from source to every DC
     for dc_node in nodes[1:node_bounds[1]]:
         edge_list.append([edge_id, 0, dc_node[0], INFINITY, 0, 0])
         edge_id += 1
-    edge_boundaries.append(edge_id)
+    edge_bounds.append(edge_id)
     
     #For each hub, choose a number of DC's and make edges between these
     for hub_node in nodes[node_bounds[1]:node_bounds[2]]:
@@ -120,7 +120,7 @@ def generate_edges(nodes, node_bounds):
         for dc in dcs:
             edge_list.append([edge_id, dc, hub_node[0], randint(MIN_DC_HUB_CAP, MAX_DC_HUB_CAP), randint(MIN_DC_HUB_COST, MAX_DC_HUB_COST), 0])
             edge_id += 1
-    edge_boundaries.append(edge_id)
+    edge_bounds.append(edge_id)
     
     #Similarly, choose a number of Hubs for each ISP node to be connected to
     for isp_node in nodes[node_bounds[2]:node_bounds[3]]:
@@ -129,7 +129,7 @@ def generate_edges(nodes, node_bounds):
         for hub in hubs:
             edge_list.append([edge_id, hub, isp_node[0], randint(MIN_HUB_ISP_CAP, MAX_HUB_ISP_CAP), randint(MIN_HUB_ISP_COST, MAX_HUB_ISP_COST), 0])
             edge_id += 1
-    edge_boundaries.append(edge_id)
+    edge_bounds.append(edge_id)
 
     #Finally, choose a number of ISP Nodes for each user to be connected to
     for user_node in nodes[node_bounds[3]:]:
@@ -141,7 +141,7 @@ def generate_edges(nodes, node_bounds):
             
     print 'Done creating edges, there are: %s' %edge_id
                 
-    return edge_list, edge_boundaries
+    return edge_list, edge_bounds
 
 
 if __name__ == '__main__':
