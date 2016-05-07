@@ -51,9 +51,21 @@ def get_node_excess(node, ib_edges, ob_edges):
     for edge in ob_edges:
         cur_flow -= edge[5]
     return demand - cur_flow
-        
-        
+    
+
 def max_flow(nodes, edges, node_bounds, edge_bounds, timestamp):
+    #
+    #  Use an excess scaling algorithm to find the max-flow
+    #
+        
+        
+def mincost_experiment(nodes, edges, node_bounds, edge_bounds, timestamp):
+    #
+    #  !! This is an experimental algorithm that I tried to implement but couldn't convince myself that I could formally prove it is correct.
+    #  !!  Instead, I implemented the standard preflow-push algorithm above for the sake of completing the project.
+    #  !! I plan on refining this to see if I can get better performance by the nature of the topology of the graph.  What I'd like to show
+    #  !!  is that I can get performance of O(m*(n_1^2+n_2^2+n_3^2+n_4^2)) << O(m*n^2) for some sets of n's, minimizing at n_i = .25*n
+    #
     #  Use a modified preflow-push algorithm to find the min-cost flow.  Initialize the flow graph by pushing flow = min(demand, capacity)
     #  on ISP->User nodes.  Then calculate the total flow out of ISP nodes, and push flows from HUBs to satisfy (using lowest cost edges),
     #  and repeat from DCs to HUBs.  Once this preflow is found, iterate over user nodes to find excess flow (will never have shortage,

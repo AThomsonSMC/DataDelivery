@@ -2,6 +2,7 @@
 Utility methods go here.
 '''
 
+import csv
 
 #Node sections:
     #0 = source
@@ -46,4 +47,8 @@ def find_inbound_edges(node_id, node_bounds, edge_bounds, tot_edges):
     return search_bounds
     
     
-#TODO: Move file output to here
+def write_file(data_list, name, id):
+    with open('./io/%s_%s.csv' %(name, id), 'wb') as file:
+        writer = csv.writer(file, delimiter=',')
+        for data in data_list:
+            writer.writerow(data)

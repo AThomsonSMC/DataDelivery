@@ -18,12 +18,13 @@ from nf_sp import topological_sort
 from time import time                           #Gives number of seconds since epoch
 
 if __name__ == '__main__':
-    TIMESTAMP = int(time())
+    TIMESTAMP = int(time()*1000)
+    ID = TIMESTAMP % 10000          #Unlikely to run program exactly n*10 seconds apart with millisecod accuracy
     print '\nStarting Network Flows DataDelivery.py...'
     print 'For usage explanation, see the README'
-    nodes, edges, node_boundaries, edge_boundaries = generate_network(TIMESTAMP)
+    nodes, edges, node_boundaries, edge_boundaries = generate_network(ID)
     print '\nFinding shortest paths...'
-    topological_sort(nodes, edges, node_boundaries, edge_boundaries, TIMESTAMP)
+    topological_sort(nodes, edges, node_boundaries, edge_boundaries, ID)
     print '\nCalculating Max Flow and Min Cut...'
     #max_flow()
     #min_cut()
