@@ -4,6 +4,9 @@ Utility methods go here.
 
 import csv
 
+
+INFINITY = 999999999                #Effectively infinite, but prints to csv better
+
 #Node sections:
     #0 = source
     #1 = DCs

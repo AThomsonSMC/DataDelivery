@@ -10,7 +10,7 @@ min cut.
 
 from nf_generate_network import generate_network
 from nf_sp import topological_sort
-#import max_flow from nf_max_flow
+from nf_max_flow import preflow_push
 #import min_cut from nf_min_cut
 #import flood_network from nf_flood_network
 #import calc_stats from nf_calc_status
@@ -22,11 +22,11 @@ if __name__ == '__main__':
     ID = TIMESTAMP % 10000          #Unlikely to run program exactly n*10 seconds apart with millisecod accuracy
     print '\nStarting Network Flows DataDelivery.py...'
     print 'For usage explanation, see the README'
-    nodes, edges, node_boundaries, edge_boundaries = generate_network(ID)
+    nodes, edges, node_bounds, edge_bounds = generate_network(ID)
     print '\nFinding shortest paths...'
-    topological_sort(nodes, edges, node_boundaries, edge_boundaries, ID)
+    topological_sort(nodes, edges, node_bounds, edge_bounds, ID)
     print '\nCalculating Max Flow and Min Cut...'
-    #max_flow()
+    preflow_push(nodes, edges, node_bounds, edge_bounds, ID)
     #min_cut()
     print '\n\nFlooding Network...'
     #flood_network()

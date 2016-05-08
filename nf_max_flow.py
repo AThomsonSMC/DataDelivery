@@ -6,6 +6,7 @@ and incrementally pushing units of flow.
 
 import csv
 import nf_utils
+from nf_utils import INFINITY
 
 test_nodes = [               #[node_id, demand]
   [0, 5],
@@ -53,11 +54,56 @@ def get_node_excess(node, ib_edges, ob_edges):
     return demand - cur_flow
     
 
-def max_flow(nodes, edges, node_bounds, edge_bounds, timestamp):
+def preflow_push(nodes, edges, node_bounds, edge_bounds, timestamp):
     #
-    #  Use an excess scaling algorithm to find the max-flow
+    #  Use a preflow push algorithm to find the max-flow and min-cut
     #
+    excess = []
+    for node in nodes:
+        excess.append(0)
+    excess.append(0)        #Virtual sink node
+    
+    sink_distances = {}
+    nodes.reverse()                     # we need to know User distances to find ISPs, need ISPs to find HUBs, etc.
+    for node in nodes:
+        # Figure out what section the current node is in and set edge searching bounds accordingly
+        node_sec = 0
+        ob_bounds = []
+        for i in node_bounds:
+            if node[0] >= i: node_sec += 1
         
+        if node_sec == 4:
+            sink_distances[node[0]] = 1
+        elif node_sec == 3:
+            ob_bounds = [edge_bounds[2],len(edges)]
+        elif node_sec == 2:
+            ob_bounds = [edge_bounds[1],edge_bounds[2]]
+        elif node_sec == 1:
+            ob_bounds = [edge_bounds[0],edge_bounds[1]]
+        else:
+            sink_distances[node[0]] = len(nodes)        # set distance of source node to n
+        
+        # Now iterate over outgoing edges to find best sink distance
+        if node[0] not in sink_distances:
+            best_d = INFINITY
+            for edge in edges[ob_bounds[0]:ob_bounds[1]]:
+                if edge[1] == node[0]:
+                    pot = sink_distances[edge[2]] + edge[4]
+                    if pot < best_d:
+                        best_d = pot
+            sink_distances[node[0]] = best_d
+        
+        if node[0] not in sink_distances:
+            raise Exception('Did not find sink distance, something went wrong.')
+    
+    # Now that sink_distances have been found on all nodes, start pushing preflow
+    res_edges = edges.copy()
+    tot_edges = len(edges)
+    for edge in edges:
+        res_edges.append([tot_edges+edge[0],edge[2],edge[1],edge[3],edge[4],0])       #Initialize reverse edges with no flow
+    
+    
+            
         
 def mincost_experiment(nodes, edges, node_bounds, edge_bounds, timestamp):
     #
@@ -102,7 +148,7 @@ def mincost_experiment(nodes, edges, node_bounds, edge_bounds, timestamp):
             if edge[2] == node[0]:
                 edge[5] += node[1]
                 if edge[5] > edge[3]: edge[5] = edge[3]
-       node[1] = 0
+        node[1] = 0
        
     #Finally repeat on DCs
     for node in nodes[node_bounds[0]:node_bounds[1]]:
@@ -113,7 +159,7 @@ def mincost_experiment(nodes, edges, node_bounds, edge_bounds, timestamp):
             if edge[2] == node[0]:
                 edge[5] += node[1]
                 if edge[5] > edge[3]: edge[5] = edge[3]
-       node[1] = 0                 #DCs hace 0 demand, total demand is aggregated at source node
+        node[1] = 0                 #DCs hace 0 demand, total demand is aggregated at source node
        
        
     # Network is now flooded, reduce flow into user nodes until demand is just satisfied, removing flow from most costly edges first
@@ -192,4 +238,4 @@ def mincost_experiment(nodes, edges, node_bounds, edge_bounds, timestamp):
             else:
                 ib_edges.pop(0)
                 
-     print 'Min-cost flow found!'
+    print 'Min-cost flow found!'

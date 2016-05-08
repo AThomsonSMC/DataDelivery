@@ -10,9 +10,7 @@ Users' demands.
 '''
 
 from random import randint, sample  #randit(a,b) returns random integer in [a,b]; sample(a,b,k) chooses k unique integers in [a,b] 
-from nf_utils import write_file
-
-INFINITY = 999999999                #Effectively infinite, but prints to csv better
+from nf_utils import write_file, INFINITY
 
 # These determine the size of the graph
 MIN_DC = 5

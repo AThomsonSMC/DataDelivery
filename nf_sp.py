@@ -3,7 +3,7 @@ Find the shortest path to each node.  Using Djikstra's algorithm.
 '''
 
 import nf_utils
-from nf_generate_network import INFINITY
+from nf_utils import INFINITY
 
 #This is test data for a small, acyclic graph
 test_nodes = [               #[node_id, distance]
@@ -34,10 +34,10 @@ test_edges = [               #[edge_id, tail_id, head_id, capacity, cost, flow (
 def topological_sort(nodes, edges, node_bounds, edge_bounds, id):
     queued_nodes = []
     done_nodes = []
-    best_parent = {}
+    best_parent = []
     
     for node in nodes:
-        best_parent[node[0]] = -1        #Initialize every node's parent to invalid -1
+        best_parent.append(-1)        #Initialize every node's parent to invalid -1
     
     cur_node = 0             #the id of the currently inspected node
     best_parent[0] = cur_node     #source node's parent is itself
@@ -58,7 +58,7 @@ def topological_sort(nodes, edges, node_bounds, edge_bounds, id):
             cur_node = queued_nodes.pop(0)      #Set cur_node to first element and then remove node from queue
         except IndexError:
             cur_node = -1               #Queue is empty, set cur_node to invalid id.  Either done or something went wrong.
-    
+            
     print 'Done finding shortest paths, writing to disk.'
     nf_utils.write_file(nodes, 'nodes', id)      #Wait to write nodes until now for distances
     print 'Nodes written to: nodes_%s.csv' %id
