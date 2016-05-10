@@ -1,116 +1,130 @@
 '''
-Find the max-flow through the system - Use [Algorithm] to find the state that maximizes global flow while
-satisfying demands.  By starting with a feasible network and then optimizing, we reduce runtime over starting with nothing
+Find the max-flow through the system - Use a preflow push algorithm to find the state that maximizes global flow while
+satisfying demands.  By starting with an optimal network and then making feasible, we reduce runtime over starting with nothing
 and incrementally pushing units of flow.
 '''
 
-import csv
 import nf_utils
-from nf_utils import INFINITY
 
-test_nodes = [               #[node_id, demand]
-  [0, 5],
-  [1, 0],
-  [2, 0],
-  [3, 0],
-  [4, 0],
-  [5, 0],
-  [6, 0],
-  [7, -5]
-]
-
-test_edges = [               #[edge_id, tail_id, head_id, capacity, cost]
-  [0, 0, 1, 5, 2],
-  [1, 0, 4, 2, 4],
-  [2, 1, 2, 8, 3],
-  [3, 4, 2, 4, 4],
-  [4, 4, 5, 3, 5],
-  [5, 5, 6, 10, 2],
-  [6, 6, 2, 4, 2],
-  [7, 2, 3, 7, 1],
-  [8, 6, 3, 6, 1],
-  [9, 3, 7, 3, 2],
- [10, 6, 7, 7, 4]
-]
-
-
-def write_output(output, timestamp):
-    with open('./io/max_flow_%s.csv' %timestamp, 'wb') as mffile:
-        mfwriter = csv.writer(mffile, delimiter=',')
-        for edge in output:
-            mfwriter.writerow([edge, output[edge]])
-    print 'Written to mf_%s.csv' %timestamp
-    
-
-def get_node_excess(node, ib_edges, ob_edges):
-    #Takes in the graph and a node [id, +supply/-demand], and checks if current flow satisfies that node's demand.
-    # Returns demand - cur_flow; negative means demand not being met, positive means node is over-supplied 
-    demand = node[1]
-    cur_flow = 0
-    for edge in ib_edges:
-        cur_flow += edge[5]
-    for edge in ob_edges:
-        cur_flow -= edge[5]
-    return demand - cur_flow
-    
-
-def preflow_push(nodes, edges, node_bounds, edge_bounds, timestamp):
-    #
-    #  Use a preflow push algorithm to find the max-flow and min-cut
-    #
-    excess = []
+def get_cap_flow_matrix(nodes, node_bounds, edges, edge_bounds):
+    n = len(nodes)
+    cap_m = [[0]*n for i in range(0,n)]       #Initialize to 0 nxn matrix
+    flow_m = [[0]*n for i in range(0,n)]      #Initialize to 0 flow in network
     for node in nodes:
-        excess.append(0)
-    excess.append(0)        #Virtual sink node
-    
-    sink_distances = {}
-    nodes.reverse()                     # we need to know User distances to find ISPs, need ISPs to find HUBs, etc.
-    for node in nodes:
-        # Figure out what section the current node is in and set edge searching bounds accordingly
-        node_sec = 0
-        ob_bounds = []
-        for i in node_bounds:
-            if node[0] >= i: node_sec += 1
-        
-        if node_sec == 4:
-            sink_distances[node[0]] = 1
-        elif node_sec == 3:
-            ob_bounds = [edge_bounds[2],len(edges)]
-        elif node_sec == 2:
-            ob_bounds = [edge_bounds[1],edge_bounds[2]]
-        elif node_sec == 1:
-            ob_bounds = [edge_bounds[0],edge_bounds[1]]
-        else:
-            sink_distances[node[0]] = len(nodes)        # set distance of source node to n
-        
-        # Now iterate over outgoing edges to find best sink distance
-        if node[0] not in sink_distances:
-            best_d = INFINITY
-            for edge in edges[ob_bounds[0]:ob_bounds[1]]:
-                if edge[1] == node[0]:
-                    pot = sink_distances[edge[2]] + edge[4]
-                    if pot < best_d:
-                        best_d = pot
-            sink_distances[node[0]] = best_d
-        
-        if node[0] not in sink_distances:
-            raise Exception('Did not find sink distance, something went wrong.')
-    
-    # Now that sink_distances have been found on all nodes, start pushing preflow
-    res_edges = edges.copy()
-    tot_edges = len(edges)
-    for edge in edges:
-        res_edges.append([tot_edges+edge[0],edge[2],edge[1],edge[3],edge[4],0])       #Initialize reverse edges with no flow
-    
-    
+        ob_edges = nf_utils.find_ob_edges(node[0], node_bounds, edges, edge_bounds)
+        for edge in ob_edges:
+            cap_m[edge[1]][edge[2]] = edge[3]
             
+    return cap_m, flow_m
+
+def max_flow(nodes, edges, node_bounds, edge_bounds, timestamp):
+    
+    #Define variables used throughout algorithm
+    n = len(nodes)
+    height = [0] * n       # initialize all nodes to 0 height
+    ex = [0] * n            # all nodes have 0 excess to start
+    seen = [0] * n     # keep track of nodes that have been seen by each node
+    
+    #Add all nodes except source and sink to list of active nodes
+    active_nodes = []
+    for node in nodes:
+        if node != nodes[0] and node != nodes[-1]:
+            active_nodes.append(node[0])
+    
+    #Create the capacity and flow matrices.
+    cap_matrix, flow_matrix = get_cap_flow_matrix(nodes, node_bounds, edges, edge_bounds)
+    
+    # Next, define the subroutines
+    def push(i, j):         # Perform a flow push on edge
+        flow = min(ex[i], cap_matrix[i][j] - flow_matrix[i][j])
+        flow_matrix[i][j] += flow
+        flow_matrix[j][i] -= flow
+        ex[i] -= flow
+        ex[j] += flow
+        if j > i:
+            edge = nf_utils.get_ij_edge(i, j, edges)
+            edge[5] += flow
+        else:
+            edge = nf_utils.get_ij_edge(j, i, edges)
+            edge[5] -= flow
+    
+    def relabel(i):      # Find smallest height that allows for push
+        min_height = nf_utils.INFINITY
+        for j in range(0,n):
+            if cap_matrix[i][j] - flow_matrix[i][j] > 0:
+                min_height = min(min_height, height[j])
+                height[i] = min_height + 1
+                
+    def rid_excess(i):
+        while ex[i] > 0:
+            if seen[i] < n:
+                j = seen[i]    # Checking potential edge [i,j]
+                if cap_matrix[i][j] - flow_matrix[i][j] > 0 and height[i] > height[j]:
+                    push(i, j)
+                else:
+                    seen[i] += 1   # No valid neighbors
+            else:
+                relabel(i)      #All valid neighbors checked, still have excess, raise i's height
+                seen[i] = 0
+    
+    print 'Initializing preflow...'
+    height[0] = n
+    ex[0] = nf_utils.INFINITY
+    
+    # Push flow from source.  We know only [node_bounds[0]:node_bounds[1]] are neighbors of source
+    for node in range(1,node_bounds[1]):
+        push(0, node)
+        ex[0] = nf_utils.INFINITY       #Reset excess on source to infinity so it will get pushed to next DC
+    
+    # Each user must recieve at least 1 unit of flow.  Set some ISP->User edges to 1 unit of flow
+    for edge in edges[edge_bounds[2]:edge_bounds[3]]:
+        i, j = edge[1], edge[2]
+        if ex[j] == 0:       #If user already has flow, no need to provide more for now
+            flow_matrix[i][j] = 1
+            edge[5] += 1
+            ex[i] -= 1
+            ex[j] += 1
+    
+    print 'Every user has at least one unit of flow...'
+    cur = 0
+    while cur < len(active_nodes):
+        i = active_nodes[cur]
+        orig_height = height[i]
+        rid_excess(i)
+        #If height[i] is now higher, move i to front of active_nodes and retry with new height
+        if height[i] > orig_height:
+            active_nodes.insert(0, active_nodes.pop(cur))
+        else:
+            # Node got rid of excess without needing to raise height, go to next node in active_nodes list
+            cur += 1
+            
+    max_flow = 0
+    for flow in flow_matrix[0]:
+        max_flow += flow
+         
+    print 'Found max flow!  It is %s' %max_flow  
+    
+    # Now write the results to max_flow.csv
+    flow_output = []
+    edge_output = []
+    for edge in edges:
+        flow_output.append([edge[0],edge[5]])
+        edge_output.append(edge[:5])
+    print "Writing maximum flow to max_flow_%s.csv" %timestamp 
+    nf_utils.write_file(flow_output,'max_flow',timestamp)
+    print "Writing edge data to edges_%s.csv" %timestamp
+    nf_utils.write_file(edge_output,'edges',timestamp)
+
+#
+#  !! This is an experimental algorithm that I tried to implement but couldn't convince myself that I could formally prove its correctness.
+#  !!  Instead, I implemented the standard preflow-push algorithm above for the sake of completing the project.
+#  !! I plan on revisiting this to see if I can get better performance by the nature of the topology of the graph.  What I'd like to show
+#  !!  is that I can get complexity of O(m*(n_1^2+n_2^2+n_3^2+n_4^2)) < O(m*n^2) for some sets of n's, minimizing at n_i = .25*n for O((n^2/16)*m)
+#  !! It does not run as-is, but I wanted to include the algorithm sketch to show what I was thinking
+#
+'''        
         
 def mincost_experiment(nodes, edges, node_bounds, edge_bounds, timestamp):
-    #
-    #  !! This is an experimental algorithm that I tried to implement but couldn't convince myself that I could formally prove it is correct.
-    #  !!  Instead, I implemented the standard preflow-push algorithm above for the sake of completing the project.
-    #  !! I plan on refining this to see if I can get better performance by the nature of the topology of the graph.  What I'd like to show
-    #  !!  is that I can get performance of O(m*(n_1^2+n_2^2+n_3^2+n_4^2)) << O(m*n^2) for some sets of n's, minimizing at n_i = .25*n
     #
     #  Use a modified preflow-push algorithm to find the min-cost flow.  Initialize the flow graph by pushing flow = min(demand, capacity)
     #  on ISP->User nodes.  Then calculate the total flow out of ISP nodes, and push flows from HUBs to satisfy (using lowest cost edges),
@@ -239,3 +253,4 @@ def mincost_experiment(nodes, edges, node_bounds, edge_bounds, timestamp):
                 ib_edges.pop(0)
                 
     print 'Min-cost flow found!'
+'''

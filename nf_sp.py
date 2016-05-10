@@ -1,36 +1,9 @@
 '''
-Find the shortest path to each node.  Using Djikstra's algorithm.
+Find the shortest path to each node using a Topological Sorting algorithm.
 '''
 
 import nf_utils
-from nf_utils import INFINITY
 
-#This is test data for a small, acyclic graph
-test_nodes = [               #[node_id, distance]
-  [0, 0],
-  [1, 0],
-  [2, 0],
-  [3, 0],
-  [4, 0],
-  [5, 0],
-  [6, 0],
-  [7, 0]
-]
-
-test_edges = [               #[edge_id, tail_id, head_id, capacity, cost, flow (unused here)]
-  [0, 0, 1, 99],
-  [1, 0, 4, 99],
-  [2, 1, 2, 99],
-  [3, 1, 5, 99],
-  [4, 4, 5, 99],
-  [5, 5, 2, 99],
-  [6, 5, 6, 99],
-  [7, 2, 6, 99],
-  [8, 6, 3, 99],
-  [9, 6, 7, 99],
- [10, 3, 7, 99]
-]    
-    
 def topological_sort(nodes, edges, node_bounds, edge_bounds, id):
     queued_nodes = []
     done_nodes = []
@@ -45,14 +18,13 @@ def topological_sort(nodes, edges, node_bounds, edge_bounds, id):
     #Do this loop until the number of permanently labels nodes = number of nodes
     while len(done_nodes) < len(nodes):
         if cur_node == -1: raise Exception('Invalid node index')
-        search_bounds = nf_utils.find_outbound_edges(cur_node, node_bounds, edge_bounds, len(edges))   #Returns bounds of possible edge_ids for faster search.
-        for edge in edges[search_bounds[0]:search_bounds[1]]:
-            if edge[1] == cur_node:
-                if edge[2] not in queued_nodes and edge[2] not in done_nodes:
-                    queued_nodes.append(edge[2])
-                if (nodes[cur_node][1] + edge[4]) < nodes[edge[2]][1]:
-                    nodes[edge[2]][1] = nodes[cur_node][1] + edge[4]
-                    best_parent[edge[2]] = edge[1]
+        ob_edges = nf_utils.find_ob_edges(cur_node, node_bounds, edges, edge_bounds)   #Returns bounds of possible edge_ids for faster search.
+        for edge in ob_edges:
+            if edge[2] not in queued_nodes and edge[2] not in done_nodes:
+                queued_nodes.append(edge[2])
+            if (nodes[cur_node][1] + edge[4]) < nodes[edge[2]][1]:          #If new distance is better, update target node and best known parent
+                nodes[edge[2]][1] = nodes[cur_node][1] + edge[4]
+                best_parent[edge[2]] = cur_node
         done_nodes.append(cur_node)
         try:
             cur_node = queued_nodes.pop(0)      #Set cur_node to first element and then remove node from queue
@@ -68,7 +40,3 @@ def topological_sort(nodes, edges, node_bounds, edge_bounds, id):
         sp_out.append([node[0], best_parent[node[0]]])
     nf_utils.write_file(sp_out, 'sp', id)
     print 'Shortest paths written to: sp_%s.csv' %id
-    
-        
-if __name__ == "__main__":
-    topological_sort(test_nodes, test_edges, [999,999,999], [999,999,999], 'TEST123')
